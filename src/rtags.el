@@ -297,6 +297,8 @@
               (push (format "--timeout=%d" rtags-timeout) arguments))
           (unless rtags-sort-references-by-input
               (push "--no-sort-references-by-input" arguments))
+          (if rtags-wildcard-symbol-names
+            (push "--wildcard-symbol-names" arguments))
           (if (and rtags-show-containing-function (not (member "-N" arguments)))
               (push "-o" arguments))
 
@@ -607,13 +609,14 @@
     (if (not (equal "" input))
         (setq tagname input))
     (with-current-buffer (rtags-get-buffer)
-      (rtags-call-rc :path path switch tagname :path-filter filter :context tagname :path-filter-regex regexp-filter)
+      (rtags-call-rc :path path switch tagname :path-filter filter :context tagname :path-filter-regex regexp-filter (if rtags-symbolnames-case-insensitive "-I"))
       (rtags-reset-bookmarks)
       (rtags-handle-results-buffer))))
 
 (defun rtags-symbolname-completion-get (string)
   (with-temp-buffer
-    (rtags-call-rc "-Y" "-S" string)
+    (rtags-call-rc "-Y" "-S" string (if rtags-symbolnames-case-insensitive "-I"))
+    (rtags-log (buffer-string))
     (eval (read (buffer-string)))))
 
 (defun rtags-symbolname-completion-exactmatch (string)
@@ -622,10 +625,34 @@
     (> (point-max) (point-min))))
 
 (defun rtags-symbolname-complete (string predicate code)
-  (cond ((eq code nil)
-         (try-completion string (rtags-symbolname-completion-get string) predicate))
-        ((eq code t) (rtags-symbolname-completion-get string))
-        ((eq code 'lambda) (rtags-symbolname-completion-exactmatch string))))
+  ;; (message "CALLED %s %s %s"
+  ;;          string predicate
+  ;;          (cond ((eq code nil) "nil")
+  ;;                ((eq code t) "t")
+  ;;                ((eq code 'lambda) "lambda")))
+
+  (cond ((null code)
+         (let* ((alternatives (rtags-symbolname-completion-get string))
+                (attempt (try-completion string alternatives predicate)))
+           ;; (message "%s %d %d %s %s" string (length alternatives)
+           ;;          (if rtags-wildcard-symbol-names 1 0)
+           ;;          attempt
+           ;;          (and (string-match '\\*' string) "yes"))
+
+           ;; (if (and rtags-wildcard-symbol-names
+           ;;          (not attempt)
+           ;;          (> (length alternatives) 0)
+           ;;          (string-match "\\*" string))
+           ;;     (progn
+           ;;       (message "RETURNING STRING")
+           ;;       string)
+           ;;   attempt)))
+           attempt))
+        ((eq code t)
+         (rtags-symbolname-completion-get string))
+        ((eq code 'lambda)
+         (rtags-symbolname-completion-exactmatch string))
+        (t nil)))
 
 (defvar rtags-location-stack-index 0)
 (defvar rtags-location-stack nil)
@@ -674,6 +701,11 @@
   "Interval for completions timer"
   :group 'rtags
   :type 'number)
+
+(defcustom rtags-wildcard-symbol-names t
+  "Allow use of * and ? to match symbol names"
+  :group 'rtags
+  :type 'boolean)
 
 (defcustom rtags-tracking nil
   "When on automatically jump to symbol under cursor in *RTags* buffer"
@@ -1780,7 +1812,12 @@ References to references will be treated as references to the referenced symbol"
   :type 'integer)
 
 (defcustom rtags-find-file-case-insensitive nil
-  "Treat files case insensitively"
+  "Treat files case-insensitively"
+  :group 'rtags
+  :type 'boolean)
+
+(defcustom rtags-symbolnames-case-insensitive nil
+  "Treat symbol names case-insensitively"
   :group 'rtags
   :type 'boolean)
 

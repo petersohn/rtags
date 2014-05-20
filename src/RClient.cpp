@@ -107,7 +107,8 @@ enum OptionType {
     UnsavedFile,
     Verbose,
     CurrentFile,
-    XmlDiagnostics
+    XmlDiagnostics,
+    WildcardSymbolNames
 };
 
 struct Option {
@@ -223,6 +224,7 @@ struct Option opts[] = {
     { NoUnescapeCompileCommands, "no-unescape-compile-commands", 0, no_argument, "Escape \\'s and unquote arguments to -c." },
     { NoSortReferencesByInput, "no-sort-references-by-input", 0, no_argument, "Don't sort references by input position." },
     { ProjectRoot, "project-root", 0, required_argument, "Override project root for compile commands" },
+    { WildcardSymbolNames, "wildcard-symbol-names", 'a', no_argument, "Expand * like wildcards in --list-symbols" },
     { None, 0, 0, 0, 0 }
 };
 
@@ -652,6 +654,9 @@ bool RClient::parse(int &argc, char **argv)
             p.resolve();
             mPathFilters.insert(p);
             break; }
+        case WildcardSymbolNames:
+            mQueryFlags |= QueryMessage::WildcardSymbolNames;
+            break;
         case RangeFilter: {
             List<RegExp::Capture> caps;
             RegExp rx("^\\([0-9][0-9]*\\)-\\([0-9][0-9]*\\)$");
