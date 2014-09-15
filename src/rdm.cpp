@@ -104,7 +104,7 @@ static void usage(FILE *f)
             "  --unload-timer|-u [arg]                    Number of minutes to wait before unloading non-current projects (disabled by default).\n"
             "  --verbose|-v                               Change verbosity, multiple -v's are allowed.\n"
             "  --watch-system-paths|-w                    Watch system paths for changes.\n"
-
+            "  --no-progress|-p                           Don't report compilation progress in xml output.\n"
             "\nCompiling/Indexing options:\n"
             "  --allow-Wpedantic|-P                       Don't strip out -Wpedantic. This can cause problems in certain projects.\n"
             "  --define|-D [arg]                          Add additional define directive to clang.\n"
@@ -179,6 +179,7 @@ int main(int argc, char** argv)
         { "allow-Wpedantic", no_argument, 0, 'P' },
         { "enable-compiler-manager", no_argument, 0, 'R' },
         { "enable-NDEBUG", no_argument, 0, 'g' },
+        { "no-progress", no_argument, 0, 'p' },
 #ifdef OS_Darwin
         { "filemanager-watch", no_argument, 0, 'M' },
 #else
@@ -399,6 +400,9 @@ int main(int argc, char** argv)
             return 0;
         case 'Y':
             serverOpts.options |= Server::NoNoUnknownWarningsOption;
+            break;
+        case 'p':
+            serverOpts.options |= Server::NoProgress;
             break;
         case 'R':
             serverOpts.options |= Server::EnableCompilerManager;
