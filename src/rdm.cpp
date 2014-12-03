@@ -123,8 +123,8 @@ static void usage(FILE *f)
 
 int main(int argc, char** argv)
 {
-#if 0
-    Location::set("foo", 1);
+#if 1
+    // Location::set("foo", 1);
     DB<Location, String> db;
 
     db.open("/tmp/fisk2", db.Overwrite);
