@@ -96,6 +96,7 @@ static void usage(FILE *f)
             "  --setenv|-e [arg]                          Set this environment variable (--setenv \"foobar=1\").\n"
             "  --silent|-S                                No logging to stdout.\n"
             "  --socket-file|-n [arg]                     Use this file for the server socket (default ~/.rdm).\n"
+            "  --tcp-port [arg]                           If not 0, use this TCP port instead of socket files (default 0).\n"
             "  --start-suspended|-Q                       Start out suspended (no reindexing enabled).\n"
             "  --suspend-rp-on-crash|-q [arg]             Suspend rp in SIGSEGV handler (default " DEFAULT_SUSPEND_RP ").\n"
             "  --sync-threshold|-y [arg]                  Automatically sync after [arg] files indexed.\n"
@@ -152,6 +153,7 @@ int main(int argc, char** argv)
         { "silent", no_argument, 0, 'S' },
         { "exclude-filter", required_argument, 0, 'X' },
         { "socket-file", required_argument, 0, 'n' },
+        { "tcp-port", required_argument, 0, '~' },
         { "config", required_argument, 0, 'c' },
         { "no-rc", no_argument, 0, 'N' },
         { "data-dir", required_argument, 0, 'd' },
@@ -290,6 +292,7 @@ int main(int argc, char** argv)
     Server::Options serverOpts;
     serverOpts.threadStackSize = defaultStackSize;
     serverOpts.socketFile = String::format<128>("%s.rdm", Path::home().constData());
+    serverOpts.tcpPort = 0;
     serverOpts.jobCount = std::max(2, ThreadPool::idealThreadCount());
     serverOpts.rpVisitFileTimeout = DEFAULT_RP_VISITFILE_TIMEOUT;
     serverOpts.rpIndexerMessageTimeout = DEFAULT_RP_INDEXER_MESSAGE_TIMEOUT;
@@ -411,6 +414,9 @@ int main(int argc, char** argv)
             break;
         case 'n':
             serverOpts.socketFile = optarg;
+            break;
+        case '~':
+            serverOpts.tcpPort = atoi(optarg);
             break;
         case 'd':
             serverOpts.dataDir = String::format<128>("%s", Path::resolved(optarg).constData());

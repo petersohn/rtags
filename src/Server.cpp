@@ -192,15 +192,25 @@ bool Server::init(const Options &options)
 
     for (int i=0; i<10; ++i) {
         mUnixServer.reset(new SocketServer);
-        warning() << "listening" << mOptions.socketFile;
-        if (mUnixServer->listen(mOptions.socketFile)) {
-            break;
+        if (mOptions.tcpPort != 0) {
+            warning() << "listening on port " << mOptions.tcpPort;
+            if (mUnixServer->listen(mOptions.tcpPort)) {
+                break;
+            }
+        } else {
+            warning() << "listening" << mOptions.socketFile;
+            if (mUnixServer->listen(mOptions.socketFile)) {
+                break;
+            }
         }
         mUnixServer.reset();
         if (!i) {
             enum { Timeout = 1000 };
             Connection connection;
-            if (connection.connectUnix(mOptions.socketFile, Timeout)) {
+            bool connectionSuccessful = mOptions.tcpPort != 0 ?
+                    connection.connectTcp("localhost", mOptions.tcpPort, Timeout) :
+                    connection.connectUnix(mOptions.socketFile, Timeout);
+            if (connectionSuccessful) {
                 connection.send(QueryMessage(QueryMessage::Shutdown));
                 connection.disconnected().connect(std::bind([](){ EventLoop::eventLoop()->quit(); }));
                 connection.finished().connect(std::bind([](){ EventLoop::eventLoop()->quit(); }));
@@ -209,7 +219,9 @@ bool Server::init(const Options &options)
         } else {
             sleep(1);
         }
-        Path::rm(mOptions.socketFile);
+        if (mOptions.tcpPort == 0) {
+            Path::rm(mOptions.socketFile);
+        }
     }
     if (!mUnixServer) {
         error("Unable to listen on %s", mOptions.socketFile.constData());
@@ -1498,7 +1510,9 @@ static inline bool slowContains(const LinkedList<T> &list, const T &t)
 
 void Server::stopServers()
 {
-    Path::rm(mOptions.socketFile);
+    if (mOptions.tcpPort != 0) {
+        Path::rm(mOptions.socketFile);
+    }
     mUnixServer.reset();
 }
 

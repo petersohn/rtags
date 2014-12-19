@@ -73,13 +73,14 @@ public:
     };
     struct Options {
         Options()
-            : options(0), jobCount(0), unloadTimer(0),
+            : options(0), tcpPort(0), jobCount(0), unloadTimer(0),
               rpVisitFileTimeout(0), rpIndexerMessageTimeout(0), rpConnectTimeout(0),
               rpNiceValue(0), syncThreshold(0), threadStackSize(0), maxCrashCount(0),
               completionCacheSize(0), astCache(0), testTimeout(60 * 1000 * 5)
         {}
         Path socketFile, dataDir;
         unsigned options;
+		uint16_t tcpPort;
         int jobCount, unloadTimer, rpVisitFileTimeout,
             rpIndexerMessageTimeout, rpConnectTimeout, rpNiceValue,
             syncThreshold, threadStackSize, maxCrashCount, completionCacheSize, astCache,
