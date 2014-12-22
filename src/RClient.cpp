@@ -96,6 +96,7 @@ enum OptionType {
     Silent,
     SilentQuery,
     SocketFile,
+    TcpPort,
     Sources,
     Status,
     StripParen,
@@ -203,6 +204,7 @@ struct Option opts[] = {
     { MatchCaseInsensitive, "match-icase", 'I', no_argument, "Match case insensitively" },
     { AbsolutePath, "absolute-path", 'K', no_argument, "Print files with absolute path." },
     { SocketFile, "socket-file", 'n', required_argument, "Use this socket file (default ~/.rdm)." },
+    { TcpPort, "tcp-port", '~', required_argument, "If not 0, use this TCP port instead of socket files (default 0)." },
     { Timeout, "timeout", 'y', required_argument, "Max time in ms to wait for job to finish (default no timeout)." },
     { FindVirtuals, "find-virtuals", 'k', no_argument, "Use in combinations with -R or -r to show other implementations of this function." },
     { FindFilePreferExact, "find-file-prefer-exact", 'A', no_argument, "Use to make --find-file prefer exact matches over partial matches." },
@@ -418,7 +420,7 @@ public:
 };
 
 RClient::RClient()
-    : mQueryFlags(0), mMax(-1), mLogLevel(0), mTimeout(-1),
+    : mQueryFlags(0), mTcpPort(0), mMax(-1), mLogLevel(0), mTimeout(-1),
       mMinOffset(-1), mMaxOffset(-1), mConnectTimeout(DEFAULT_CONNECT_TIMEOUT),
       mBuildIndex(0), mEscapeMode(Escape_Auto), mArgc(0), mArgv(0)
 {
@@ -464,7 +466,10 @@ int RClient::exec()
                                               std::placeholders::_1, std::placeholders::_2));
     connection.finished().connect(std::bind([](){ EventLoop::eventLoop()->quit(); }));
     connection.disconnected().connect(std::bind([](){ EventLoop::eventLoop()->quit(); }));
-    if (!connection.connectUnix(mSocketFile, mConnectTimeout)) {
+    bool connectionSuccessful = mTcpPort != 0 ?
+            connection.connectTcp("localhost", mTcpPort, mConnectTimeout) :
+            connection.connectUnix(mSocketFile, mConnectTimeout);
+    if (!connectionSuccessful) {
         error("Can't seem to connect to server");
         return false;
     }
@@ -586,6 +591,9 @@ bool RClient::parse(int &argc, char **argv)
             return false;
         case SocketFile:
             mSocketFile = optarg;
+            break;
+        case TcpPort:
+            mTcpPort = atoi(optarg);
             break;
         case IMenu:
             mQueryFlags |= QueryMessage::IMenu;

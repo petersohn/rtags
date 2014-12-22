@@ -68,6 +68,7 @@ private:
     void addCompile(const Path &dir, EscapeMode escapeMode);
 
     unsigned mQueryFlags;
+    uint16_t mTcpPort;
     int mMax, mLogLevel, mTimeout, mMinOffset, mMaxOffset, mConnectTimeout, mBuildIndex;
     Set<String> mPathFilters;
     UnsavedFiles mUnsavedFiles;
